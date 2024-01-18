@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 import app.controllers.user_controller as controller
@@ -17,6 +17,7 @@ router = APIRouter(
 async def create_user(
     user: UserSchema,
     db_session: Session = Depends(db.get_db),
+    status_code=status.HTTP_201_CREATED,
 ) -> UserSerializer:
     return controller.create_user(user, db_session)
 
@@ -25,6 +26,7 @@ async def create_user(
 async def get_user(
     user_id: str,
     db_session=Depends(db.get_db),
+    status_code=status.HTTP_200_OK,
 ) -> UserSerializer:
     user_id = int(user_id)
     user = await UserSchema.get(db_session, id=user_id)
@@ -32,7 +34,10 @@ async def get_user(
 
 
 @router.get("/")
-async def get_all_users(db_session=Depends(db.get_db)) -> List[UserSerializer]:
+async def get_all_users(
+    db_session=Depends(db.get_db),
+    status_code=status.HTTP_200_OK,
+) -> List[UserSerializer]:
     users = await UserSchema.get_all(db_session)
     return users
 
@@ -42,6 +47,7 @@ async def update(
     user_id: str,
     user: UserSchema,
     db_session=Depends(db.get_db),
+    status_code=status.HTTP_200_OK,
 ) -> UserSerializer:
     user_id = int(user_id)
     user = await UserSchema.update(db_session, id=user_id, **user.model_dump())
@@ -49,6 +55,10 @@ async def update(
 
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: str, db_session=Depends(db.get_db)) -> bool:
+async def delete_user(
+    user_id: str,
+    db_session=Depends(db.get_db),
+    status_code=status.HTTP_200_OK,
+) -> bool:
     user_id = int(user_id)
     return await UserSchema.delete(db_session, id=user_id)

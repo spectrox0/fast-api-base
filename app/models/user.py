@@ -11,8 +11,8 @@ class UserSchema(BaseModel):
     """User model."""
 
     # Declare user attributes
-    email: EmailStr
-    enabled: bool
+    username: EmailStr
+    password: str
     created_at: str
     updated_at: str
     # An user can have multiple profiles
@@ -22,6 +22,8 @@ class UserSchema(BaseModel):
 
 class UserSerializer(UserSchema):
     id: int
+    # Enabled is a boolean value to determinate logic deletion
+    enabled: bool
 
     class Config:
         from_attributes = True

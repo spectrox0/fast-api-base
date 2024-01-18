@@ -25,7 +25,7 @@ class User(Base):
     __tablename__ = "users"
     created_at = Column(DateTime, index=True, default=datetime.utcnow)
     id = Column(String, primary_key=True)
-    email = Column(String, unique=True)
+    username = Column(String, unique=True)
     profiles = relationship("Profile", backref="user")
     favorite_profiles = relationship("Profile", secondary=favorite_profiles)
 
