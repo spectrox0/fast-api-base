@@ -1,0 +1,24 @@
+# Configuration for all files in the repository
+root = true
+
+# Styles for all files
+[*]
+indent_style = space
+indent_size = 4
+
+# Python files
+[*.py]
+charset = utf-8
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = true
+
+# Poetry files
+[pyproject.toml]
+indent_style = space
+indent_size = 2

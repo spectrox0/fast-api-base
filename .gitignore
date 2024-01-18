@@ -1,0 +1,37 @@
+
+# Jetbrains IDE's 
+.idea
+.idea/
+
+# Vscode Settings
+.vscode
+
+#.env file
+.env
+.env.local
+.env.development
+.env.production
+
+
+poetry add pydantic
+
+dist/
+build/
+venv/
+.venv/
+
+
+__pypackages__/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+htmlcov/
+.coverage
+
+
+# Poetry local configuration file - https://python-poetry.org/docs/configuration/#local-configuration
+poetry.toml
+
+# ruff
+.ruff_cache/

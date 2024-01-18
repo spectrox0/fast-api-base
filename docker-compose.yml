@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+    # Servicio para PostgreSQL
+    postgres:
+        image: postgres:latest
+        environment:
+            DB_NAME: db_test
+            DB_USER: myuser
+            DB_PASSWORD: mypassword
+            DB_PORT: 5432
+            DB_HOST: postgres
+        ports:
+            - "5432:5432"
+
+    # Servicio para la aplicación FastAPI
+    fastapi:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "8000:8000"
+        depends_on:
+            - postgres
+        environment:
+            DATABASE_URL: postgresql://myuser:mypassword@postgres:5432/mydatabase
