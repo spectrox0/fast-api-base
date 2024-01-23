@@ -1,7 +1,7 @@
 """ Profile controller. """
 from typing import List
+from uuid import UUID
 
-from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import app.services.profile_services as services
@@ -38,7 +38,7 @@ async def get_profiles(db_session: AsyncSession) -> List[ProfileSerializer]:
 
 
 async def delete_profile(
-    profile_id: str,
+    profile_id: UUID,
     db_session: AsyncSession,
 ) -> ProfileSchema:
     """
@@ -63,7 +63,7 @@ async def delete_profile(
 
 
 async def update_profile(
-    profile_id: str,
+    profile_id: UUID,
     profile: ProfileSchema,
     db_session: AsyncSession,
 ) -> ProfileSerializer:
@@ -93,7 +93,7 @@ async def update_profile(
 
 
 async def get_profile(
-    profile_id: str,
+    profile_id: UUID,
     db_session: AsyncSession,
 ) -> ProfileSerializer:
     try:
@@ -121,7 +121,4 @@ async def create_profile(
             raise ConflictException
         return res
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error",
-        ) from exc
+        raise ServerErrorException from exc

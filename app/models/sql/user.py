@@ -1,15 +1,16 @@
 from typing import Any, Dict, List, Optional, Set
 
+from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.core.models import TimestampModel, UUIDModel
+from app.core.models import TableBase, UUIDModel
 from app.models.sql.profile import Profile
 
 
 class UserBase(SQLModel):
     """Base model for a user."""
 
-    username: str = Field(unique=True)
+    username: EmailStr = Field(unique=True)
 
 
 class UserIn(UserBase):
@@ -22,7 +23,7 @@ class UserOut(UserBase, UUIDModel):
     """Model for reading a user."""
 
 
-class User(UserBase, UUIDModel, TimestampModel, table=True):
+class User(UserBase, TableBase, table=True):
     """
     Represents a user in the system.
 
@@ -36,7 +37,6 @@ class User(UserBase, UUIDModel, TimestampModel, table=True):
 
     # The table name in the database
     __tablename__ = "users"
-    enabled: bool = Field(default=True)
     password: str = Field()
     # Relationship with the Profile model
     profiles: List[Profile] = Relationship(back_populates="user")

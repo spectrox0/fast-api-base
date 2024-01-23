@@ -47,3 +47,12 @@ async def get_session() -> AsyncSession:
 async def disconnect_db():
     # Close the connection pool
     await engine.dispose()
+
+
+async def commit_rollback(session: AsyncSession):
+    try:
+        await session.commit()
+        logger.info("Committing transaction")
+    except Exception:
+        await session.rollback()
+        raise

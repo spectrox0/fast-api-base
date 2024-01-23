@@ -1,29 +1,26 @@
-from fastapi import HTTPException, Request
-from fastapi.security import HTTPBearer
-from fastapi.security.utils import get_authorization_scheme_param
-from starlette.status import HTTP_403_FORBIDDEN
+from fastapi import Depends, Request
 
 from app.main import app
+from app.services.user_services import get_user
+from app.utils.jwt import JWTBearer
+from config.database import get_session
 
-security = HTTPBearer()
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @app.middleware("http")
-async def validate_token(request: Request, call_next):
-    credentials_exception = HTTPException(
-        status_code=HTTP_403_FORBIDDEN,
-        detail="Could not validate credentials",
-    )
-    authorization: str = request.headers.get("Authorization")
-    scheme, param = get_authorization_scheme_param(authorization)
-    if not authorization or scheme.lower() != "bearer":
-        raise credentials_exception
-    if not is_token_valid(param):
-        raise credentials_exception
+async def auth_middleware(
+    request: Request,
+    call_next,
+    db_session=Depends(get_session),
+):
+    res = JWTBearer(request)
+    print(res)
+    # response = await validate_token(request)
 
+    request.state.current_user = await get_user(
+        user_id="sas",
+        db_session=db_session,
+    )
     response = await call_next(request)
     return response
-
-
-def is_token_valid(token: str):
-    return True

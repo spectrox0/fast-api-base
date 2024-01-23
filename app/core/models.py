@@ -19,7 +19,7 @@ def transform_entities(
         entities (List[SQLModel]): The list of entities to transform.
         entity_model (Type[T]): The entity model class to use for transformation.
 
-    Returns:
+    Returnsvedivedi:
         List[T]: The list of transformed entities.
 
     """
@@ -34,7 +34,7 @@ class UUIDModel(SQLModel):
         uuid (uuid_pkg.UUID): The UUID primary key field.
     """
 
-    uuid: UUID = Field(
+    id: UUID = Field(
         default_factory=uuid4,
         primary_key=True,
         index=True,
@@ -67,3 +67,22 @@ class TimestampModel(SQLModel):
             "onupdate": text("current_timestamp(0)"),
         },
     )
+
+
+class LogicalDeleteModel(SQLModel):
+    """
+    A base model class that includes a logical delete field.
+    """
+
+    enabled: bool = Field(
+        default=True,
+        nullable=False,
+    )
+
+
+class TableBase(UUID, TimestampModel, LogicalDeleteModel):
+    """
+    A base model class that includes a UUID primary key field,
+    timestamp fields for creation and update times,
+    and a logical delete field.
+    """

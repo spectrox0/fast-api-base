@@ -1,11 +1,15 @@
 """ User controller module. """
 from typing import List
+from uuid import UUID
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.sql.user import UserIn, UserOut
 from app.services import user_services
-from app.utils.exceptions import EmailAlreadyUsedException
+from app.utils.exceptions import (
+    AuthorizationException,
+    EmailAlreadyUsedException,
+)
 
 
 async def create_user(
@@ -24,7 +28,7 @@ async def create_user(
 
 
 async def get_user(
-    user_id: str,
+    user_id: UUID,
     db_session: AsyncSession,
 ) -> UserOut:
     user = await user_services.get_user(db_session=db_session, user_id=user_id)
@@ -37,7 +41,7 @@ async def get_all_users(db_session: AsyncSession) -> List[UserOut]:
 
 
 async def update(
-    user_id: str,
+    user_id: UUID,
     user: UserIn,
     db_session: AsyncSession,
 ) -> UserOut:
@@ -51,7 +55,7 @@ async def update(
     if exist:
         raise EmailAlreadyUsedException
 
-    user = await user_services.update(
+    user = await user_services.update_user(
         db_session,
         id=user_id,
         **user.model_dump(),
@@ -59,6 +63,21 @@ async def update(
     return user
 
 
-async def delete_user(user_id: str, db_session: AsyncSession) -> bool:
-    user_id = int(user_id)
+async def delete_user(user_id: UUID, db_session: AsyncSession) -> bool:
     return await user_services.delete_user(user_id, db_session)
+
+
+async def authenticate_user(
+    db_session: AsyncSession,
+    username: str,
+    password: str,
+) -> UserOut:
+    username = username.lower().strip()
+    user = await user_services.authenticate_user(
+        db_session,
+        username,
+        password,
+    )
+    if not user:
+        raise AuthorizationException
+    return user

@@ -2,7 +2,7 @@
 
 from sqlmodel import Field, SQLModel
 
-from app.core.models import UUIDModel
+from app.core.models import TableBase, UUIDModel
 
 
 class ProfileBase(SQLModel):
@@ -10,19 +10,18 @@ class ProfileBase(SQLModel):
 
     name: str = Field()
     description: str = Field()
+    user_id: str = Field(foreign_key="users.id")
 
 
 class ProfileIn(ProfileBase):
     """Model for creating a profile."""
-
-    user_id: str = Field()
 
 
 class ProfileOut(ProfileBase, UUIDModel):
     """Model for reading a profile."""
 
 
-class Profile(SQLModel, table=True):
+class Profile(ProfileBase, TableBase, table=True):
     """
     Represents a user profile.
 
@@ -34,9 +33,5 @@ class Profile(SQLModel, table=True):
     """
 
     __tablename__ = "profiles"
-    id: str = Field(primary_key=True)
-    name: str = Field()
-    description: str = Field()
-    enabled: bool = Field(default=True)
     user_id: str = Field(foreign_key="users.id")
     favorite: bool = Field(default=False)
