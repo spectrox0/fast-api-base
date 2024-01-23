@@ -78,5 +78,5 @@ class JWTBearer(HTTPBearer):
                 algorithms=[settings.jwt_algorithm],
             )
             return True
-        except (jwt.ExpiredSignatureError, jwt.JWTError):
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             return False

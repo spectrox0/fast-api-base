@@ -6,6 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.models import transform_entities
 from app.models.sql.profile import Profile, ProfileIn, ProfileOut
+from app.repository.profile import ProfileRepository
 
 
 async def get_profiles(db_session: AsyncSession) -> List[ProfileOut]:
@@ -55,14 +56,8 @@ async def update_profile(
     profile: ProfileIn,
     db_session: AsyncSession,
 ) -> ProfileOut:
-    query = (
-        update(Profile)
-        .where(Profile.id == profile_id)
-        .values(**profile.model_dump())
-        .returning(Profile)
-    )
-    profile = await db_session.exec(query)
-    profile = profile.first()
+    profile = ProfileRepository(db_session)
+    profile = await profile.update(profile_id, profile)
     if not profile:
         return None
     profile = ProfileOut.model_validate(profile)

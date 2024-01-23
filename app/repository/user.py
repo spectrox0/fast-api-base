@@ -58,7 +58,7 @@ class UserRepository(GenericSqlRepository[User, UserIn], UserBaseRepository):
         return self._session.exec(query).first()
 
     async def get_fav_profiles(self, user_id: UUID) -> Optional[List[Profile]]:
-        # Get all favoutite profiles for a user
+        # Get all favorite profiles for a user
         query = (
             select(self._model_cls)
             .where(
