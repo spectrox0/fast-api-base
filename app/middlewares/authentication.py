@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from starlette.status import HTTP_403_FORBIDDEN
 
-from main import app
+from app.main import app
 
 security = HTTPBearer()
 

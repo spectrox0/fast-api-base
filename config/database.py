@@ -1,17 +1,17 @@
 import logging
 
-from sqlalchemy.engine.url import URL
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.engine import URL
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import sessionmaker
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-Base = declarative_base()
 
-
-# Database URL for SQLAlchemy connection string
+## Database URL for SQLAlchemy connection string
 db_url = URL.create(
     drivername=settings.db_driver,
     username=settings.db_user,
@@ -19,28 +19,31 @@ db_url = URL.create(
     host=settings.db_host,
     port=settings.db_port,
     database=settings.db_name,
-)
+).render_as_string(hide_password=False)
+
+# Create an asynchronous engine instance
+engine = create_async_engine(url=db_url, echo=True, future=True)
 
 
-class Database:
-    def __init__(self):
-        self.__session = None
-        self.__engine = None
-
-    def connect(self):
-        self.__engine = create_async_engine(url=db_url)
-
-        self.__session = async_sessionmaker(
-            bind=self.__engine,
-            autocommit=False,
-        )
-
-    async def disconnect(self):
-        await self.__engine.dispose()
-
-    async def get_db(self):
-        async with db.__session() as session:
-            yield session
+async def init_db():
+    # Begin a new database session
+    async with engine.begin() as conn:
+        # Create all tables in the database which are defined by SQLModel's metadata
+        await conn.run_sync(SQLModel.metadata.create_all)
 
 
-db = Database()
+async def get_session() -> AsyncSession:
+    # Create a new asynchronous session
+    async_session = sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    # Yield the session and close it after use
+    async with async_session() as session:
+        yield session
+
+
+async def disconnect_db():
+    # Close the connection pool
+    await engine.dispose()

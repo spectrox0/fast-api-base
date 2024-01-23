@@ -1,101 +1,64 @@
-""" User model for SQL database."""
-from datetime import datetime
-from uuid import uuid4
+from typing import Any, Dict, List, Optional, Set
 
-from sqlalchemy import Column, DateTime, String
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import expression as sql
+from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.sql.profile import favorite_profiles
-from config.database import Base
+from app.core.models import TimestampModel, UUIDModel
+from app.models.sql.profile import Profile
 
 
-class User(Base):
+class UserBase(SQLModel):
+    """Base model for a user."""
+
+    username: str = Field(unique=True)
+
+
+class UserIn(UserBase):
+    """Model for creating a user."""
+
+    password: str = Field()
+
+
+class UserOut(UserBase, UUIDModel):
+    """Model for reading a user."""
+
+
+class User(UserBase, UUIDModel, TimestampModel, table=True):
     """
     Represents a user in the system.
 
     Attributes:
-        created_at (DateTime): The timestamp when the user was created.
-        id (String): The unique identifier of the user.
-        email (String): The email address of the user.
+        created_at (datetime): The timestamp when the user was created.
+        id (str): The unique identifier of the user.
+        username (str): The email address of the user.
         profiles (List[Profile]): The profiles associated with the user.
         favorite_profiles (List[Profile]): The favorite profiles of the user.
     """
 
+    # The table name in the database
     __tablename__ = "users"
-    created_at = Column(DateTime, index=True, default=datetime.utcnow)
-    id = Column(String, primary_key=True)
-    username = Column(String, unique=True)
-    profiles = relationship("Profile", backref="user")
-    favorite_profiles = relationship("Profile", secondary=favorite_profiles)
+    enabled: bool = Field(default=True)
+    password: str = Field()
+    # Relationship with the Profile model
+    profiles: List[Profile] = Relationship(back_populates="user")
 
-    def __repr__(self):
-        return (
-            f"<{self.__class__.__name__}("
-            f"id={self.id}, "
-            f"full_name={self.full_name}, "
-            f")>"
+    @property
+    def favorite_profiles(self) -> List["Profile"]:
+        return [profile for profile in self.profiles if profile.favorite]
+
+    def dict(
+        self,
+        by_alias: bool = False,
+        exclude_none: bool = False,
+        exclude: Optional[Set[str]] = None,
+        include: Optional[Set[str]] = None,
+    ) -> Dict[str, Any]:
+        model_dict = super().model_dump(
+            by_alias=by_alias,
+            exclude_none=exclude_none,
+            exclude=exclude,
+            include=include,
         )
-
-    @classmethod
-    async def create(cls, db, **kwargs) -> "User":
-        """
-        Create a new user in the database.
-
-        Args:
-            db: The database connection.
-            **kwargs: Additional keyword arguments representing the user attributes.
-
-        Returns:
-            The created user object.
-
-        """
-        query = (
-            sql.insert(cls)
-            .values(id=str(uuid4()), **kwargs)
-            .returning(cls.id, cls.full_name)
-        )
-        users = await db.execute(query)
-        await db.commit()
-        return users.first()
-
-    @classmethod
-    async def update(cls, db, user_id, **kwargs) -> "User":
-        query = (
-            sql.update(cls)
-            .where(cls.id == user_id)
-            .values(**kwargs)
-            .execution_options(synchronize_session="fetch")
-            .returning(cls.id, cls.full_name)
-        )
-        users = await db.execute(query)
-        await db.commit()
-        return users.first()
-
-    @classmethod
-    async def get(cls, db, id) -> "User":
-        query = sql.select(cls).where(cls.id == id)
-        users = await db.execute(query)
-        (user,) = users.first()
-        return user
-
-    @classmethod
-    async def get_all(cls, db) -> list["User"]:
-        query = sql.select(cls)
-        users = await db.execute(query)
-        users = users.scalars().all()
-        return users
-
-    @classmethod
-    async def delete(cls, db, id) -> bool:  # noqa: A002
-        query = (
-            sql.delete(cls)
-            .where(cls.id == id)
-            .returning(
-                cls.id,
-                cls.full_name,
-            )
-        )
-        await db.execute(query)
-        await db.commit()
-        return True
+        model_dict["favorite_profiles"] = [
+            profile.model_dump() for profile in self.favorite_profiles
+        ]
+        return model_dict

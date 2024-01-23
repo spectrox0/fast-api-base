@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     db_host: str = "localhost"
     db_port: str = "8000"
     db_driver: str = "postgresql+asyncpg"
+    db_user: str = "postgres"
 
 
 settings = Settings()

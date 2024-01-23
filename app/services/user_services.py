@@ -1,39 +1,71 @@
-from typing import List
+from typing import List, Optional
 
-from sqlalchemy.orm import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.user import UserSchema, UserSerializer
+from app.core.models import transform_entities
+from app.models.sql.user import User, UserIn, UserOut, select, update
 
 
 async def create_user(
-    db_session: Session,
-    user: UserSchema,
-) -> UserSerializer:
-    user = await UserSchema.create(db_session, **user.model_dump())
+    db_session: AsyncSession,
+    payload: UserIn,
+) -> UserOut:
+    user = await User.create(db_session, **payload.model_dump())
+    user = UserOut.model_validate(user)
     return user
+
+
+async def get_user_by_username(
+    db_session: AsyncSession,
+    username: str,
+) -> UserOut:
+    query = select(User).where(User.username == username)
+    user = await db_session.exec(query)
+    user = user.first()
+    return UserOut.model_validate(user) if user else None
 
 
 async def get_user(
     user_id: int,
-    db_session: Session,
-) -> UserSerializer:
-    user = await UserSchema.get(db_session, id=user_id)
-    return user
+    db_session: AsyncSession,
+) -> Optional[UserOut]:
+    query = select(User).where(User.id == user_id, User.enabled is True)
+    user = await db_session.exec(query)
+    user = user.first()
+    return UserOut.model_validate(user) if user else None
 
 
-async def get_all_users(db_session: Session) -> List[UserSerializer]:
-    users = await UserSchema.get_all(db_session)
-    return users
+async def get_all_users(db_session: AsyncSession) -> List[UserOut]:
+    query = select(User).where(User.enabled is True)
+    users = await db_session.exec(query)
+    users = users.all()
+    return transform_entities(users, UserOut) if users else None
 
 
-async def update(
-    user_id: int,
-    user: UserSchema,
-    db_session: Session,
-) -> UserSerializer:
-    user = await UserSchema.update(db_session, id=user_id, **user.model_dump())
-    return user
+async def update_user(
+    user_id: str,
+    user: UserIn,
+    db_session: AsyncSession,
+) -> UserOut:
+    query = (
+        update(User)
+        .where(User.id == user_id)
+        .values(**user.model_dump())
+        .returning(User)
+    )
+    user = await db_session.exec(query)
+    user = user.first()
+
+    return UserOut.model_validate(user) if user else None
 
 
-async def delete_user(user_id: int, db_session: Session) -> bool:
-    return await UserSchema.delete(db_session, id=user_id)
+async def delete_user(user_id: str, db_session: AsyncSession) -> bool:
+    query = (
+        update(User)
+        .where(User.id == user_id)
+        .values(enabled=False)
+        .returning(User)
+    )
+    user = await db_session.exec(query)
+    user = user.first()
+    return user is not None

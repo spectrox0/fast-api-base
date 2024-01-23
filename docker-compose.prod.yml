@@ -2,7 +2,7 @@ version: "3"
 
 services:
     # Servicio para PostgreSQL
-    postgres:
+    postgres-prod:
         image: postgres:latest
         environment:
             POSTGRES_USER: myuser
@@ -14,26 +14,21 @@ services:
             - pgdata:/var/lib/postgresql/data
 
     # Servicio para la aplicación FastAPI
-    fastapi:
-        container_name: fastapi
+    fastapi-prod:
         build:
             context: .
-            dockerfile: Dockerfile.dev
+            dockerfile: Dockerfile
         ports:
             - "8000:8000"
         depends_on:
-            - postgres
-
+            - postgres-prod
         environment:
             DB_NAME: db_test
             DB_USER: myuser
             DB_PASSWORD: mypassword
             DB_PORT: 5432
-            DB_HOST: postgres
-            DATABASE_URL: postgresql://myuser:mypassword@postgres:5432/mydatabase
-        volumes:
-            - .:/app
-            - /app/.venv
+            DB_HOST: postgres-prod
+            DATABASE_URL: postgresql://myuser:mypassword@postgres-prod:5432/mydatabase
 
 volumes:
     pgdata:

@@ -25,3 +25,20 @@ start:
 
 install-precommit:
 	pre-commit install
+
+start_container:
+	docker-compose up --build -d
+
+start_container_prod:
+	docker-compose -f docker-compose.prod.yml up --build -d
+
+run_alembic_migrations:
+	docker exec -it fastapi alembic upgrade head
+
+name ?= Initial
+alembic_migration:
+	if [ -z "$(name)" ]; then \
+		echo "Error: No migration name provided. Use 'make make_alembic_migration name=\"your_migration_name\"'"; \
+		exit 1; \
+	fi
+	docker exec -it fastapi alembic revision --autogenerate -m "$(name)"

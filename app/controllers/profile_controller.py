@@ -2,14 +2,18 @@
 from typing import List
 
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 import app.services.profile_services as services
 from app.models.profile import ProfileSchema, ProfileSerializer
-from app.utils.msg import not_entities_found, not_entity_found
+from app.utils.exceptions import (
+    ConflictException,
+    NotFoundException,
+    ServerErrorException,
+)
 
 
-async def get_profiles(db_session: Session) -> List[ProfileSerializer]:
+async def get_profiles(db_session: AsyncSession) -> List[ProfileSerializer]:
     """
     Retrieve profiles from the database.
 
@@ -25,21 +29,17 @@ async def get_profiles(db_session: Session) -> List[ProfileSerializer]:
     try:
         res = await services.get_profiles(db_session)
         if not res:
-            raise HTTPException(
-                status_code=404,
-                detail=not_entities_found("profiles"),
+            raise NotFoundException(
+                resource="Profiles",
             )
         return res
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error",
-        ) from exc
+        raise ServerErrorException from exc
 
 
 async def delete_profile(
     profile_id: str,
-    db_session: Session,
+    db_session: AsyncSession,
 ) -> ProfileSchema:
     """
     Delete a profile from the database.
@@ -56,19 +56,16 @@ async def delete_profile(
     try:
         res = await services.delete_profile(int(profile_id), db_session)
         if not res:
-            raise HTTPException(status_code=404, detail="Profile not found")
+            raise NotFoundException(resource="Profiles")
         return res
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error",
-        ) from exc
+        raise ServerErrorException from exc
 
 
-def update_profile(
+async def update_profile(
     profile_id: str,
     profile: ProfileSchema,
-    db_session: Session,
+    db_session: AsyncSession,
 ) -> ProfileSerializer:
     """
     Update a profile in the database.
@@ -83,49 +80,37 @@ def update_profile(
         HTTPException: If the profile is not found or if there is an internal server error.
     """
     try:
-        res = services.update_profile(
-            id=int(profile_id),
+        res = await services.update_profile(
+            profile_id=profile_id,
             profile=profile,
             db_session=db_session,
         )
         if not res:
-            raise HTTPException(
-                status_code=404,
-                detail=not_entity_found("Profile"),
-            )
+            raise NotFoundException(resource="Profiles")
         return res
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error",
-        ) from exc
+        raise ServerErrorException from exc
 
 
 async def get_profile(
     profile_id: str,
-    db_session: Session,
+    db_session: AsyncSession,
 ) -> ProfileSerializer:
     try:
         res = await services.get_profile(
-            int(profile_id),
+            profile_id,
             db_session,
         )
         if not res:
-            raise HTTPException(
-                status_code=404,
-                detail=not_entity_found("Profile"),
-            )
+            raise NotFoundException(resource="Profiles")
         return res
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error",
-        ) from exc
+        raise ServerErrorException from exc
 
 
 async def create_profile(
     profile: ProfileSchema,
-    db_session: Session,
+    db_session: AsyncSession,
 ) -> ProfileSerializer:
     try:
         res = await services.create_profile(
@@ -133,10 +118,7 @@ async def create_profile(
             db_session,
         )
         if not res:
-            raise HTTPException(
-                status_code=400,
-                detail="The profile could not be created",
-            )
+            raise ConflictException
         return res
     except Exception as exc:
         raise HTTPException(

@@ -1,0 +1,15 @@
+FROM python:3.11-buster
+
+RUN pip install poetry==1.6.1
+ENV PATH="${PATH}:/root/.local/bin"
+RUN poetry config virtualenvs.create false  # Disable virtual environments
+
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --no-root  # Install dependencies globally
+
+WORKDIR /app
+COPY . .
+
+EXPOSE 8000
+
+CMD ["poetry", "run", "start"]
